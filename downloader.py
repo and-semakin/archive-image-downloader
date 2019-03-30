@@ -13,7 +13,7 @@ from selenium.webdriver.support import expected_conditions as EC
 
 
 LOGIN_URL = "https://tobarhiv.72to.ru"
-ITEM_ID = "2219531"
+ITEM_ID = "2219629"
 TARGET_URL = f"https://tobarhiv.72to.ru/Pages/StorageFiles/StorageFilesList.aspx?ItemId={ITEM_ID}&ItemType=5"
 LOGIN = "olya_9019"
 PASSWORD = "paroldlybro"
@@ -45,12 +45,20 @@ def check_enabled_by_css_selector(driver, selector):
         return False
 
 
-def wait_until_elem_appear(driver, elem_selector: str, wait_time=15) -> None:
-        WebDriverWait(driver, wait_time).until(EC.visibility_of_element_located((By.CSS_SELECTOR, elem_selector)))
+def wait_until_elem_appear(driver, elem_selector: str, wait_time=30) -> None:
+    if driver.find_element_by_css_selector(elem_selector).is_displayed():
+        return
+    WebDriverWait(driver, wait_time).until(
+        EC.visibility_of_element_located((By.CSS_SELECTOR, elem_selector))
+    )
 
 
-def wait_until_elem_disappear(driver, elem_selector: str, wait_time=15) -> None:
-    WebDriverWait(driver, wait_time).until(EC.invisibility_of_element_located((By.CSS_SELECTOR, elem_selector)))
+def wait_until_elem_disappear(driver, elem_selector: str, wait_time=30) -> None:
+    if not driver.find_element_by_css_selector(elem_selector).is_displayed():
+        return
+    WebDriverWait(driver, wait_time).until(
+        EC.invisibility_of_element_located((By.CSS_SELECTOR, elem_selector))
+    )
 
 
 
@@ -132,12 +140,16 @@ driver.execute_script("""
 while True:
     wait_until_elem_disappear(driver, LOADING_BAR)
 
-    try:
-        filename = driver.find_element_by_css_selector('#MainPlaceHolder__storageViewerControl_FilesDropDownList_I').get_attribute('value')
-    except StaleElementReferenceException:
-        print('Stale element error')
-        time.sleep(5)
-        continue
+    while True:
+        try:
+            filename = driver.find_element_by_css_selector(
+                '#MainPlaceHolder__storageViewerControl_FilesDropDownList_I'
+            ).get_attribute('value')
+        except StaleElementReferenceException:
+            print('Stale element error')
+            time.sleep(5)
+            continue
+        break
 
     normalized_filename = filename.replace('\\', '_')
     guid = guids[normalized_filename]
@@ -177,13 +189,15 @@ while True:
     if not check_exists_by_css_selector(driver, GO_TO_NEXT_IMAGE_BTN):
         break
     
-    try:
-        driver.find_element_by_css_selector(GO_TO_NEXT_IMAGE_BTN).click()
-        time.sleep(0.5)
-    except StaleElementReferenceException:
-        print('Stale element error')
-        time.sleep(5)
-        continue
+    while True:
+        try:
+            driver.find_element_by_css_selector(GO_TO_NEXT_IMAGE_BTN).click()
+            time.sleep(0.5)
+        except StaleElementReferenceException:
+            print('Stale element error')
+            time.sleep(5)
+            continue
+        break
 
 
 
